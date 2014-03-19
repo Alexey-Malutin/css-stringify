@@ -3,8 +3,23 @@
  * Module dependencies.
  */
 
-var Compressed = require('./lib/compress');
-var Identity = require('./lib/identity');
+var Compressed;
+var Identity;
+
+var inBrowser = !!(this || (0,eval)('this')).document;
+if(inBrowser){
+  //in browser
+  define(['./lib/compress.js', './lib/identity.js'], function(compress, identity){
+    Compressed = compress;
+    Identity = identity;
+    return cssStringify
+  });
+} else {
+  //in NodeJs
+  Compressed = require('./lib/compress');
+  Identity = require('./lib/identity');
+  module.exports = cssStringify;
+}
 
 /**
  * Stringfy the given AST `node`.
@@ -20,7 +35,7 @@ var Identity = require('./lib/identity');
  * @api public
  */
 
-module.exports = function(node, options){
+var cssStringify = function(node, options){
   options = options || {};
 
   var compiler = options.compress
@@ -28,7 +43,7 @@ module.exports = function(node, options){
     : new Identity(options);
 
   // source maps
-  if (options.sourcemap) {
+  if (options.sourcemap && !inBrowser) {
     var sourcemaps = require('./lib/source-map-support');
     sourcemaps(compiler);
 
@@ -39,4 +54,3 @@ module.exports = function(node, options){
   var code = compiler.compile(node);
   return code;
 };
-
